@@ -14,8 +14,9 @@
 1. Emails a summary of books bought and books containing soft-stopwords
 
 ## Getting started
-### Environment variables
-Email settings (if sending from Gmail, enable IMAP in Settings) 
+### 1. Environment variables
+Email settings (if sending from Gmail, enable IMAP in Gmail Settings) 1
+'jiklok'
 ```bash
 KC_EMAIL_FROM='emailtosendfrom@gmail.com'
 KC_EMAIL_PASSWORD='fromemailpassword'
@@ -27,19 +28,20 @@ KC_AWS_ACCESS_KEY_ID='ACCESSKEY'
 KC_AWS_SECRET_ACCESS_KEY='SECRET_ACCESS_KEY'
 KC_AWS_ASSOCIATE_TAG='ASSOCIATE_TAG'
 ```
+Amazon.com account login
+```bash
+KC_AMAZON_USER_EMAIL='user@email.com'
+KC_AMAZON_PASSWORD='mypassword'
+```
 Goodreads environment variables - Obtain a [Goodreads API key](https://www.goodreads.com/api)
 ```bash
 KC_GOODREADS_KEY='GOODREADS_ACCESS_KEY'
 ````
 
-
-### Cookies
-Copy your browser's `cookies.dat` containing your Amazon login cookies to `~/cookies.txt`
-
-### Data Files
+### 2. Data Files
 `blockCategories.dat` -  List of stopwords in categories
-1. If a book contains one of these words in its categories or parent categories, it is immediately skipped.
-1. The book will not be "bought" nor included in the email digest
+1. If a book contains one of these words in its catego
+mail digest
 
 |Examples|
 |---|
@@ -77,7 +79,7 @@ Copy your browser's `cookies.dat` containing your Amazon login cookies to `~/coo
 | sensual| 
 
 `ignoreParentheticals.dat` - List of words to ignore in book titles when searching for series names
-1. E.g. Ignore "illustrated" as a book series in the title _Animal Farm (Illustrated)_ 
+1. E.g. In the title _Animal Farm (Illustrated)_, ignore "illustrated" as a book series
     
 |Examples|
 |---|
