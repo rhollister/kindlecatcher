@@ -40,14 +40,14 @@ def loadListFromFile(filename):
 
 BOOKS_SEEN = loadSetFromFile('data/seenBooks.dat')
 SERIES_OWN = loadSetFromFile('data/ownedSeries.dat')
-DONTBUY_CATEGORIES = loadSetFromFile('data/dontBuyCategories.dat')
-DONT_BUY_WORDS = loadSetFromFile('data/dontBuyWords.dat')
-DONT_BUY_WORDS_GOODREADS_CLEAN = [re.sub(r' ', '-', s.lower()) for s in DONT_BUY_WORDS]
 WHITELIST_CATEGORIES = loadSetFromFile('data/whitelistCategories.dat')
-BLOCK_CATEGORIES = loadSetFromFile('data/blockCategories.dat')
-BLOCK_WORDS = loadSetFromFile('data/blockWords.dat')
-BLOCK_WORDS_AMAZON_CLEAN = "-" + " -".join([re.sub(r'[^a-z0-9]', '', s.lower()) for s in BLOCK_WORDS])
-BLOCK_WORDS_GOODREADS_CLEAN = [re.sub(r' ', '-', s.lower()) for s in BLOCK_WORDS]
+BLACKLIST_CATEGORIES = loadSetFromFile('data/blacklistCategories.dat')
+BLACKLIST_WORDS = loadSetFromFile('data/blacklistWords.dat')
+BLACKLIST_WORDS_AMAZON = "-" + " -".join([re.sub(r'[^a-z0-9]', '', s.lower()) for s in BLACKLIST_WORDS])
+BLACKLIST_WORDS_GOODREADS = [re.sub(r' ', '-', s.lower()) for s in BLACKLIST_WORDS]
+GRAYLIST_CATEGORIES = loadSetFromFile('data/graylistCategories.dat')
+GRAYLIST_WORDS = loadSetFromFile('data/graylistWords.dat')
+GRAYLIST_WORDS_GOODREADS = [re.sub(r' ', '-', s.lower()) for s in GRAYLIST_WORDS]
 
 IGNORED_PARENTHETICALS = loadSetFromFile('data/ignoredParentheticals.dat')
 CATEGORY_NODES = loadListFromFile('data/categories.dat')
@@ -100,7 +100,7 @@ def fetchBookItems(node, page):
 			Parser=lambda text: BeautifulSoup(text, 'html5lib'), MaxQPS=1.1)
 		response = amazon.ItemSearch(ItemPage=page, BrowseNode=node, SearchIndex="KindleStore", MaximumPrice="0", 
 			Sort="salesrank", ResponseGroup="AlternateVersions,ItemAttributes,EditorialReview,Images,BrowseNodes",
-			Keywords=BLOCK_WORDS_AMAZON_CLEAN)
+			Keywords=BLACKLIST_WORDS_AMAZON)
 		
 		items = copy.copy(response.items)
 		response.decompose()
@@ -110,7 +110,7 @@ def fetchBookItems(node, page):
 			time.sleep(10)
 			response = amazon.ItemSearch(ItemPage=page, BrowseNode=node, SearchIndex="KindleStore", MaximumPrice="0", 
 				Sort="salesrank", ResponseGroup="AlternateVersions,ItemAttributes,EditorialReview,Images,BrowseNodes",
-				Keywords=BLOCK_WORDS_AMAZON_CLEAN)
+				Keywords=BLACKLIST_WORDS_AMAZON)
 			
 			items = copy.copy(response.items)
 			response.decompose()
@@ -139,7 +139,7 @@ class Book:
 		self.ownSeries = False
 		self.reviewCount = ""
 		self.reviewAverage = ""
-		self.doNotBuy = ""
+		self.graylist = ""
 		self.boughtStr = ""
 		self.emailMessage = ""
 		self.allCategories = ""
@@ -219,17 +219,17 @@ def parseBookItems(items):
 
 		if "White Listed" not in book.parentCategory:
 			skipBook = False
-			for word in BLOCK_WORDS:
+			for word in BLACKLIST_WORDS:
 				if re.search(r'\b' + word + r'\b', fullDescription):
-					logRejects(asin, book.title, "contains block word: " + str(word))
+					logRejects(asin, book.title, "contains blacklist word: " + str(word))
 					skipBook = True
 					break
 			if skipBook:
 				continue
 
-			for word in DONT_BUY_WORDS:
+			for word in GRAYLIST_WORDS:
 				if re.search(r'\b' + word + r'\b', fullDescription):
-					book.doNotBuy = "(desc: " + word + ") "
+					book.graylist = "(desc: " + word + ") "
 					break
 		
 		setSeries(book)
@@ -265,11 +265,11 @@ def setCategories(book, browseNodes):
 				book.parentCategory = "White Listed"
 				return True
 
-		if set(categories).intersection(BLOCK_CATEGORIES):
-			logRejects(book.asin, book.title, "block category: " + str(set(categories).intersection(BLOCK_CATEGORIES)))
+		if set(categories).intersection(BLACKLIST_CATEGORIES):
+			logRejects(book.asin, book.title, "blacklist category: " + str(set(categories).intersection(BLACKLIST_CATEGORIES)))
 			return False
-		elif set(categories).intersection(DONTBUY_CATEGORIES):
-			book.doNotBuy = "(category: " + next(iter(set(categories).intersection(DONTBUY_CATEGORIES))) + ") "
+		elif set(categories).intersection(GRAYLIST_CATEGORIES):
+			book.graylist = "(category: " + next(iter(set(categories).intersection(GRAYLIST_CATEGORIES))) + ") "
 
 	book.allCategories = allCategoriesStr
 
@@ -379,7 +379,7 @@ def removeUnwantedBooks(books):
 	print "  Looking up reviews by ASIN for", len(asins), "books"
 	removeUnwantedByASINLookup(books, asins)
 
-	booksToBuy = [v for k,v in books.iteritems() if v.goodreadsId and not v.doNotBuy and not v.ownSeries]
+	booksToBuy = [v for k,v in books.iteritems() if v.goodreadsId and not v.graylist and not v.ownSeries]
 	print
 	print "  Filtering by Goodreads info for", len(booksToBuy), "books"
 	booksToBuy = removeUnwantedByGoodreadsInfo(booksToBuy)
@@ -462,22 +462,22 @@ def removeUnwantedByGoodreadsInfo(books):
 		time.sleep(1)
 		response = BeautifulSoup(urllib2.urlopen("https://www.goodreads.com/book/show.xml?key=" + GOODREADS_KEY + "&id="+ book.goodreadsId).read(), "html5lib")
 
- 		if containsStopWord(str(response.goodreadsresponse.book.description), BLOCK_WORDS):
+ 		if containsStopWord(str(response.goodreadsresponse.book.description), BLACKLIST_WORDS):
 			booksToRemove.append(book)
-			logRejects(book.asin, book.title, "goodreads description: " + containsStopWord(shelf["name"], BLOCK_WORDS))
+			logRejects(book.asin, book.title, "goodreads description: " + containsStopWord(shelf["name"], BLACKLIST_WORDS))
 		else:
 			for shelf in response.find_all("shelf"):
 				if shelf["count"] == "1" or shelf["count"] == "2":
 					break
 
-				if containsStopWord(shelf["name"], BLOCK_WORDS_GOODREADS_CLEAN):
+				if containsStopWord(shelf["name"], BLACKLIST_WORDS_GOODREADS):
 					booksToRemove.append(book)
-					logRejects(book.asin, book.title, "blockshelf: " + containsStopWord(shelf["name"], BLOCK_WORDS_GOODREADS_CLEAN))
+					logRejects(book.asin, book.title, "blacklistshelf: " + containsStopWord(shelf["name"], BLACKLIST_WORDS_GOODREADS))
 					break
 
-				stopword = containsStopWord(shelf["name"], DONT_BUY_WORDS_GOODREADS_CLEAN)
+				stopword = containsStopWord(shelf["name"], GRAYLIST_WORDS_GOODREADS)
 				if stopword:
-					book.doNotBuy = "(shelf: " + stopword + ") "
+					book.graylist = "(shelf: " + stopword + ") "
 					break
 
 		year = response.goodreadsresponse.book.work.original_publication_year
@@ -532,9 +532,9 @@ def isWorthBuying(ratingCount, avgRating, book):
 	return float(avgRating) > threshold
 
 def buyBook(book, isDryrun):
-	if (book.ownSeries or not book.doNotBuy) and book.url:
+	if (book.ownSeries or not book.graylist) and book.url:
 		time.sleep(0.5)
-		book = amazonBookBuyer.buyBook(book, BLOCK_WORDS, DONT_BUY_WORDS, isDryrun)
+		book = amazonBookBuyer.buyBook(book, BLACKLIST_WORDS, GRAYLIST_WORDS, isDryrun)
 
 		if book.boughtStr is None:
 			return ""
@@ -578,7 +578,7 @@ def sendEmail(books):
 
 				message = """
 <img height=150 hspace=10 vspace=10 align=left src=\"%(imageUrl)s\">
-%(doNotBuy)s <b>%(boughtStr)s <a href=%(url)s>%(title)s</a></b> 
+%(graylist)s <b>%(boughtStr)s <a href=%(url)s>%(title)s</a></b> 
 <b>%(reviewAverage)s</b>/<a href=https://www.goodreads.com/book/show/%(goodreadsId)s>%(reviewCount)s reviews</a>.
 %(categories)s. %(year)s. %(author)s<br>
 %(description)s</em></b></i></font><br>

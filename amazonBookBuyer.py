@@ -15,23 +15,23 @@ class Session:
 		self.browser = browser
 		self.cookieJar = cookieJar
 
-def buyBook(book, blockWords, dontBuyWords, isDryrun=False):
+def buyBook(book, blacklistWords, graylistWords, isDryrun=False):
 	session = None
 	try:
 		session = getSession(book.url)
 
-		hasBlockWord = hasStopWords(session.page, blockWords)
+		hasBlockWord = hasStopWords(session.page, blacklistWords)
 		if hasBlockWord and "christian" in book.allCategories:
-			book.doNotBuy = "(reviews: " + hasBlockWord + ") "
+			book.graylist = "(reviews: " + hasBlockWord + ") "
 			return book
 		elif hasBlockWord or isNotAvailable(session.page):
 			book.boughtStr = None
 			session.page.decompose()
 			return book
 
-		hasDontBuyWord = hasStopWords(session.page, dontBuyWords)
+		hasDontBuyWord = hasStopWords(session.page, graylistWords)
 		if hasDontBuyWord and not book.ownSeries:
-			book.doNotBuy = "(reviews: " + hasDontBuyWord + ") "
+			book.graylist = "(reviews: " + hasDontBuyWord + ") "
 		elif session.page.select('#ebooksInstantOrderUpdate'):
 			book.boughtStr="<font color=FF6600>[OWN]</font> "
 		else:
