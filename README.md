@@ -15,12 +15,16 @@
 
 ## Getting started
 ### 1. Environment variables
-Email settings (if sending from Gmail, enable IMAP in Gmail Settings) 1
-'jiklok'
+Email settings (if sending from Gmail, enable IMAP in Gmail Settings)
 ```bash
 KC_EMAIL_FROM='emailtosendfrom@gmail.com'
 KC_EMAIL_PASSWORD='fromemailpassword'
 KC_EMAIL_TO='emailtosendto@gmail.com'
+```
+Amazon.com account login
+```bash
+KC_AMAZON_USER_EMAIL='user@email.com'
+KC_AMAZON_PASSWORD='mypassword'
 ```
 Amazon API environment variables - Obtain an [Amazon Product Advertising key](http://docs.aws.amazon.com/AWSECommerceService/latest/DG/becomingDev.html)
 ```bash
@@ -28,28 +32,22 @@ KC_AWS_ACCESS_KEY_ID='ACCESSKEY'
 KC_AWS_SECRET_ACCESS_KEY='SECRET_ACCESS_KEY'
 KC_AWS_ASSOCIATE_TAG='ASSOCIATE_TAG'
 ```
-Amazon.com account login
-```bash
-KC_AMAZON_USER_EMAIL='user@email.com'
-KC_AMAZON_PASSWORD='mypassword'
-```
 Goodreads environment variables - Obtain a [Goodreads API key](https://www.goodreads.com/api)
 ```bash
 KC_GOODREADS_KEY='GOODREADS_ACCESS_KEY'
 ````
 
 ### 2. Data Files
-`blockCategories.dat` -  List of stopwords in categories
-1. If a book contains one of these words in its catego
-mail digest
+`blacklistCategories.dat` -  List of stopwords in categories
+1. If a book contains one of these words in its categories or parent categories it will be immediately skipped.
 
 |Examples|
 |---|
 | Meditation |
 | Health, Fitness| 
 | Erotica| 
-        
-`blockWords.dat` - List of stopwords in the description, editorial review, or user reviews
+
+`blacklistWords.dat` - List of stopwords in the description, editorial review, or user reviews
 1. If a book contains one of these words in its description, editorial review, or user reviews, it is immediately skipped.
 1. The book will not be "bought" nor included in the email digest
 
@@ -59,7 +57,7 @@ mail digest
 | steamy| 
 | sultry| 
 
-`dontBuyCategories.dat` - List of soft-stopwords in categories
+`graylistCategories.dat` - List of soft-stopwords in categories
 1. If a book contains one of these words in its categories or parent categories, it will not be "bought"
 1. The book will not be "bought", but will be included in the email digest
     
@@ -69,7 +67,7 @@ mail digest
 | Paranormal| 
 | Self-Help| 
 
-`dontBuyWords.dat` - List of soft-stopwords in the description, editorial review, or user reviews
+`graylistWords.dat` - List of soft-stopwords in the description, editorial review, or user reviews
 1. If a book contains one of these words in its description, editorial review, or user reviews, it will not be "bought"
 1. The book will be included in the email digest
     
@@ -78,7 +76,7 @@ mail digest
 | bedroom|
 | sensual| 
 
-`ignoreParentheticals.dat` - List of words to ignore in book titles when searching for series names
+`ignoreParentheticals.dat` - List of words in paranthesis to ignore in book titles when searching for series names
 1. E.g. In the title _Animal Farm (Illustrated)_, ignore "illustrated" as a book series
     
 |Examples|
@@ -94,9 +92,9 @@ mail digest
 1. Parent categories can be included, but Amazon limits only 100 items to be returned from a specified category 
 
 Script-generated files that should not need to be edited:
-1. `seenBooks.dat` - List of ASINs the catcher has seen and will ignore them if seen again
+1. `seenBooks.dat` - List of ASINs the script has seen and will ignore them if seen again
 1. `boughtSeries.dat` - List of series names that have been bought
-    1. If the script sees this series again, it will purchase the book despite a low score or stopwords
+    1. If the script sees a book in this series again, it will purchase the book despite a low score or stopwords
 
 ## Run
 
