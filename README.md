@@ -12,6 +12,7 @@
 1. Tries to determine the book series and will purchase sequels in the series if they appear
    1. E.g. If book one of a trilogy is great and purchased, it will buy any sequels even if the reviews aren't as great.
 1. Emails a summary of books bought and books containing soft-stopwords
+![Screenshot](https://github.com/rhollister/kindlecatcher/raw/master/screenshot1.png)
 
 ## Getting started
 ### 1. Environment variables
