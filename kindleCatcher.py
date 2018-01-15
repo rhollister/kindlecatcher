@@ -395,12 +395,17 @@ def removeUnwantedByEISBNLookup(books, eisbns):
 			url = "https://www.goodreads.com/book/review_counts.json?key=" + GOODREADS_KEY + "&isbns=" + ",".join(eisbnChunk)
 			ratingResults = json.loads(urllib2.urlopen(url).read())
 			for result in ratingResults["books"]:
+								
+				key = None
+				book = None
+				if result["isbn13"] and result["isbn13"] in books:
+					key = result["isbn13"]
+					book = books[key]
+				if not book and result["isbn"] and result["isbn"] in books:
+					key = result["isbn"]
+					book = books[key]
 
-				book = books[result["isbn13"]]
-				if not book:
-					book = books[result["isbn"]]
-
-				if book:
+				if key and book:
 					if isWorthBuying(result["work_ratings_count"], result["average_rating"], book):
 						book.buyStatus = True
 						book.reviewCount = str(result["work_ratings_count"])
@@ -409,9 +414,9 @@ def removeUnwantedByEISBNLookup(books, eisbns):
 
 					else:
 						logRejects(book.asin, book.title, "low reviews: "+str(result["work_ratings_count"])  + ", " + str(result["average_rating"]))
-						del books[result["isbn13"]]
+						del books[key]
 
-					eisbns.remove(result["isbn13"])
+					eisbns.remove(key)
 		except urllib2.HTTPError:
 			pass
 	return eisbns
@@ -431,8 +436,11 @@ def removeUnwantedByASINLookup(books, keys):
 			except Exception as e:
 				continue
 
-		avgRating = response.goodreadsresponse.average_rating
-		ratingCount = response.goodreadsresponse.ratings_count
+		try:
+			avgRating = response.goodreadsresponse.average_rating
+			ratingCount = response.goodreadsresponse.ratings_count
+		except Exception as e:
+			print response, e
 
 		buyStatus = False
 		book.reviewCount = None
@@ -480,7 +488,7 @@ def removeUnwantedByGoodreadsInfo(books):
 					book.graylist = "(shelf: " + stopword + ") "
 					break
 
-		year = response.goodreadsresponse.book.work.original_publication_year
+		year = str(response.goodreadsresponse.book.work.original_publication_year.string)
 		try: 
 			year = int(year)
 			if year < 0:
